@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>FFmpeg WebApp</title>
+    <link rel="stylesheet" href="static/style.css" />
+</head>
+
+<body>
+    <h1>FFStudio 🎛️</h1>
+
+    <h2>MP3 Cutter</h2>
+    <form id="mp3Form" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".mp3" required><br><br>
+        Start Time (HH:MM:SS): <input type="text" name="start" value="00:00:10"><br><br>
+        Duration (HH:MM:SS): <input type="text" name="duration" value="00:00:20"><br><br>
+        <button type="submit">Cut MP3</button>
+    </form>
+
+    <h2>Crop Video</h2>
+    <form id="cropForm">
+        <input type="file" name="file" required />
+        <input type="number" name="x" placeholder="x" value="0" required />
+        <input type="number" name="y" placeholder="y" value="0" required />
+        <input type="number" name="w" placeholder="width" value="200" required />
+        <input type="number" name="h" placeholder="height" value="200" required />
+        <button type="submit">Crop</button>
+    </form>
+
+    <h2>Trim Video</h2>
+    <form id="trimForm">
+        <input type="file" name="file" required />
+        <input type="text" name="start" placeholder="start (hh:mm:ss)" required />
+        <input type="text" name="end" placeholder="end (hh:mm:ss)" required />
+        <button type="submit">Trim</button>
+    </form>
+
+    <h2>Replace Audio</h2>
+    <form id="replaceForm">
+        <label>Video: <input type="file" name="video" required /></label>
+        <label>Audio: <input type="file" name="audio" required /></label>
+        <button type="submit">Replace</button>
+    </form>
+
+    <h2>Image + Audio → Video</h2>
+    <form id="imageAudioForm">
+        <label>Image: <input type="file" name="image" required /></label>
+        <label>Audio: <input type="file" name="audio" required /></label>
+        <button type="submit">Generate</button>
+    </form>
+
+    <h2>Result:</h2>
+    <audio id="audioPreview" controls></audio>
+    <video id="videoPreview" controls></video>
+
+    <script src="static/script.js"></script>
+</body>
+
+</html>

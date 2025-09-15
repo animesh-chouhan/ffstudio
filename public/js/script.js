@@ -6,7 +6,7 @@ async function handleForm(formId, endpoint, targetElId) {
         e.preventDefault();
         const formData = new FormData(form);
 
-        const response = await fetch(`/${endpoint}`, {
+        const response = await fetch(`/api/${endpoint}`, {
             method: "POST",
             body: formData,
         });

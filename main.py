@@ -39,14 +39,6 @@ app.add_middleware(
 )
 
 
-app.mount("/static", StaticFiles(directory="public"), name="static")
-
-
-@app.get("/")
-async def read_index():
-    return FileResponse(os.path.join("public", "index.html"))
-
-
 async def run_ffmpeg(cmd):
     try:
         await run_in_threadpool(subprocess.run, cmd, check=True, capture_output=True)
@@ -65,7 +57,7 @@ def cleanup(files):
             pass
 
 
-@app.post("/cut-mp3")
+@app.post("/api/cut-mp3")
 async def cut_mp3(
     file: UploadFile = File(..., max_size=MAX_SIZE),
     start: str = Form(...),  # format: "00:00:10"
@@ -108,7 +100,7 @@ async def cut_mp3(
     )
 
 
-@app.post("/crop-video")
+@app.post("/api/crop-video")
 async def crop_video(
     file: UploadFile = File(..., max_size=MAX_SIZE),
     x: int = Form(...),
@@ -150,7 +142,7 @@ async def crop_video(
     )
 
 
-@app.post("/trim")
+@app.post("/api/trim")
 async def trim_video(
     file: UploadFile = File(..., max_size=MAX_SIZE),
     start: str = Form(...),  # e.g. "00:00:10"
@@ -195,7 +187,7 @@ async def trim_video(
     )
 
 
-@app.post("/replace-audio")
+@app.post("/api/replace-audio")
 async def replace_audio(
     video: UploadFile = File(..., max_size=MAX_SIZE),
     audio: UploadFile = File(..., max_size=MAX_SIZE),
@@ -250,7 +242,7 @@ async def replace_audio(
     )
 
 
-@app.post("/image-audio")
+@app.post("/api/image-audio")
 async def image_audio(
     image: UploadFile = File(..., max_size=MAX_SIZE),
     audio: UploadFile = File(..., max_size=MAX_SIZE),
@@ -303,3 +295,6 @@ async def image_audio(
         filename="output.mp4",
         background=BackgroundTask(lambda: cleanup(files)),
     )
+
+
+app.mount("/", StaticFiles(directory="public", html=True), name="frontend")

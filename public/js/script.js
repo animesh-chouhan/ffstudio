@@ -6,6 +6,9 @@ async function handleForm(formId, endpoint, targetElId) {
         e.preventDefault();
         const formData = new FormData(form);
 
+        // Show "Processing..."
+        statusText.style.display = "block";
+
         const response = await fetch(`/api/${endpoint}`, {
             method: "POST",
             body: formData,
@@ -27,7 +30,8 @@ async function handleForm(formId, endpoint, targetElId) {
             targetEl.play();
         }
 
-        // show download button
+        // Hide "Processing..." and show Download
+        statusText.style.display = "none";
         const downloadBtn = document.getElementById("downloadBtn");
         downloadBtn.href = url;
         downloadBtn.style.display = "inline-block";

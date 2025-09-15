@@ -35,9 +35,12 @@
 
             <h3>Preview:</h3>
             <audio id="audioPreview" controls></audio>
-            <a id="downloadBtn" href="#" download="output.mp4" style="display:none;">
-                <button type="button">Download</button>
-            </a>
+            <div id="downloadWrapper">
+                <p id="statusText" style="display:none; color:#666; font-size:14px;">Processing...</p>
+                <a id="downloadBtn" href="#" download="output.mp4" style="display:none;">
+                    <button type="button">Download</button>
+                </a>
+            </div>
         </div>
     </main>
     <script src="/js/script.js"></script>

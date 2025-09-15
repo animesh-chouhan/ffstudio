@@ -51,6 +51,8 @@ async def run_ffmpeg(cmd):
     try:
         await run_in_threadpool(subprocess.run, cmd, check=True, capture_output=True)
     except subprocess.CalledProcessError as e:
+        print(e)
+        print(e.stderr.decode())
         return JSONResponse({"error": e.stderr.decode()}, status_code=500)
     return None
 

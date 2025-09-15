@@ -1,0 +1,77 @@
+/* Layout wrapper for editor */
+.editor-container {
+    display: flex;
+    width: 100%;
+    height: calc(100vh - 60px); /* full height minus navbar */
+  }
+  
+  /* Left toolbar */
+  .toolbar {
+    width: 100px;
+    background: #111;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem 0;
+    gap: 1rem;
+    border-right: 1px solid #555;
+  }
+  
+  .toolbar button {
+    width: 80%;
+    /* height: 50px; */
+    font-size: 0.8rem;
+    border-radius: 8px;
+    background: #1c1c1c;
+    color: #fff;
+    border: 1px solid #555;
+    cursor: pointer;
+  }
+  .toolbar button:hover {
+    background: #444;
+  }
+  
+  /* Canvas workspace */
+  .workspace {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #000;
+    position: relative; /* for topbar and crop box */
+  }
+  
+  #editorCanvas {
+    max-width: 90%;
+    max-height: 90%;
+    background: #222;
+  }
+  
+  /* Top bar (undo/redo/download) */
+  .topbar {
+    position: absolute;
+    top: 10px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2rem;
+  }
+  
+  .undo-redo {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex: 1;
+  }
+  
+  /* Crop box overlay */
+  .crop-box {
+    position: absolute;
+    border: 2px dashed red;
+    background: rgba(255, 0, 0, 0.1);
+    cursor: move;
+    resize: both;
+    overflow: auto;
+  }
+  

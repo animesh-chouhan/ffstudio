@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>MP3 Cutter</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+    <nav>
+        <a href="/">FFStudio 🎛️</a>
+    </nav>
+
+    <main>
+        <div class="card">
+            <h2>MP3 Cutter🎵</h2>
+            <br>
+            <form class="form" id="mp3Form" enctype="multipart/form-data">
+                <div class="form-row file-input">
+                    <label for="file">MP3 File:</label>
+                    <input type="file" id="file" name="file" accept=".mp3" required>
+                </div>
+                <div class="form-row">
+                    <label for="start">Start Time:</label>
+                    <input type="text" id="start" name="start" value="00:00:10" placeholder="HH:MM:SS">
+                </div>
+                <div class="form-row">
+                    <label for="duration">Duration:</label>
+                    <input type="text" id="duration" name="duration" value="00:00:20" placeholder="HH:MM:SS">
+                </div>
+                <button type="submit">Cut MP3</button>
+            </form>
+
+            <h3>Preview:</h3>
+            <audio id="audioPreview" controls></audio>
+            <a id="downloadBtn" href="#" download="output.mp4" style="display:none;">
+                <button type="button">Download</button>
+            </a>
+        </div>
+    </main>
+    <script src="/static/js/script.js"></script>
+    <script>
+        handleForm("mp3Form", "cut-mp3", "audioPreview");
+    </script>
+</body>
+
+</html>

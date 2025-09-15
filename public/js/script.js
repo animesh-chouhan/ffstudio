@@ -6,7 +6,7 @@ async function handleForm(formId, endpoint, targetElId) {
         e.preventDefault();
         const formData = new FormData(form);
 
-        const response = await fetch(`http://127.0.0.1:8000/${endpoint}`, {
+        const response = await fetch(`/${endpoint}`, {
             method: "POST",
             body: formData,
         });
@@ -26,11 +26,10 @@ async function handleForm(formId, endpoint, targetElId) {
             targetEl.src = url;
             targetEl.play();
         }
+
+        // show download button
+        const downloadBtn = document.getElementById("downloadBtn");
+        downloadBtn.href = url;
+        downloadBtn.style.display = "inline-block";
     });
 }
-
-handleForm("cropForm", "crop", "videoPreview");
-handleForm("trimForm", "trim", "videoPreview");
-handleForm("replaceForm", "replace-audio", "videoPreview");
-handleForm("imageAudioForm", "image-audio", "videoPreview");
-handleForm("mp3Form", "cut-mp3", "audioPreview");

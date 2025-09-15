@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Crop Video</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+    <nav>
+        <a href="/">FFStudio 🎛️</a>
+    </nav>
+
+    <main>
+        <div class="card">
+            <h2>Crop Video ✂️</h2>
+            <br>
+            <form class="form" id="cropForm" enctype="multipart/form-data">
+                <div class="form-row file-input">
+                    <label for="file">File:</label>
+                    <input type="file" id="file" name="file" accept="video/*" required>
+                </div>
+                <div class="form-row">
+                    <label for="x">X:</label>
+                    <input type="number" id="x" name="x" value="0">
+                </div>
+                <div class="form-row">
+                    <label for="y">Y:</label>
+                    <input type="number" id="y" name="y" value="0">
+                </div>
+                <div class="form-row">
+                    <label for="w">Width:</label>
+                    <input type="number" id="w" name="w" value="200">
+                </div>
+                <div class="form-row">
+                    <label for="h">Height:</label>
+                    <input type="number" id="h" name="h" value="200">
+                </div>
+                <button type="submit">Crop</button>
+            </form>
+
+            <h3>Preview:</h3>
+            <video id="videoPreview" controls></video>
+            <a id="downloadBtn" href="#" download="output.mp4" style="display:none;">
+                <button type="button">Download</button>
+            </a>
+        </div>
+    </main>
+    <script src="/static/js/script.js"></script>
+    <script>
+        handleForm("cropForm", "crop-video", "videoPreview");
+    </script>
+</body>
+
+</html>

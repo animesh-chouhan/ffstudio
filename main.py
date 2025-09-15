@@ -2,11 +2,30 @@ import subprocess
 import shutil
 import os
 import uuid
+import shlex
 
-from fastapi import FastAPI, UploadFile, Form
+from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.concurrency import run_in_threadpool
+from starlette.background import BackgroundTask
+
+ALLOWED_EXTENSIONS = {
+    "audio": [".mp3", ".wav", ".aac", ".m4a"],
+    "video": [".mp4", ".mov", ".mkv", ".avi"],
+    "image": [".jpg", ".jpeg", ".png"],
+}
+
+MAX_SIZE = 50_000_000  # 50 MB limit
+UPLOAD_DIR = "tmp/ffstudio"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+def validate_file(filename: str, category: str):
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS.get(category, []):
+        raise ValueError(f"Invalid {category} file type: {ext}")
 
 
 app = FastAPI()
@@ -19,42 +38,49 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-UPLOAD_DIR = "tmp/ffstudio"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# Mount static files (css, js, images, etc.)
 app.mount("/static", StaticFiles(directory="public"), name="static")
 
 
-# Serve index.html at root
 @app.get("/")
 async def read_index():
     return FileResponse(os.path.join("public", "index.html"))
 
 
-def run_ffmpeg(cmd):
+async def run_ffmpeg(cmd):
     try:
-        subprocess.run(cmd, check=True, capture_output=True)
+        await run_in_threadpool(subprocess.run, cmd, check=True, capture_output=True)
     except subprocess.CalledProcessError as e:
         return JSONResponse({"error": e.stderr.decode()}, status_code=500)
     return None
 
 
+def cleanup(files):
+    for file in files:
+        try:
+            os.remove(file)
+        except FileNotFoundError:
+            pass
+
+
 @app.post("/cut-mp3")
 async def cut_mp3(
-    file: UploadFile,
+    file: UploadFile = File(..., max_size=MAX_SIZE),
     start: str = Form(...),  # format: "00:00:10"
     duration: str = Form(...),  # format: "00:00:20"
 ):
-    # Save input file temporarily
-    input_path = f"temp_{uuid.uuid4().hex}.mp3"
-    output_path = f"cut_{uuid.uuid4().hex}.mp3"
+    try:
+        validate_file(file.filename, "audio")
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
 
+    input_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_{file.filename}")
     with open(input_path, "wb") as f:
-        f.write(await file.read())
+        shutil.copyfileobj(file.file, f)
 
-    # Run ffmpeg command to trim audio
-    command = [
+    output_path = input_path.replace(".mp3", "_cut.mp3")
+
+    cmd = [
         "ffmpeg",
         "-i",
         input_path,
@@ -67,23 +93,31 @@ async def cut_mp3(
         output_path,
     ]
 
-    subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    error = await run_ffmpeg(cmd)
+    if error:
+        return JSONResponse({"error": "Processing failed"}, status_code=500)
 
-    # Cleanup input file
-    os.remove(input_path)
+    files = [input_path, output_path]
+    return FileResponse(
+        output_path,
+        media_type="audio/mpeg",
+        filename="trimmed.mp3",
+        background=BackgroundTask(lambda: cleanup(files)),
+    )
 
-    # Return trimmed file
-    return FileResponse(output_path, media_type="audio/mpeg", filename="trimmed.mp3")
 
-
-@app.post("/crop")
+@app.post("/crop-video")
 async def crop_video(
-    file: UploadFile,
+    file: UploadFile = File(..., max_size=MAX_SIZE),
     x: int = Form(...),
     y: int = Form(...),
     w: int = Form(...),
     h: int = Form(...),
 ):
+    try:
+        validate_file(file.filename, "video")
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
     input_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_{file.filename}")
     with open(input_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
@@ -101,68 +135,169 @@ async def crop_video(
         "copy",
         output_path,
     ]
-    error = run_ffmpeg(cmd)
+    error = await run_ffmpeg(cmd)
     if error:
-        return error
+        return JSONResponse({"error": "Processing failed"}, status_code=500)
 
-    return FileResponse(output_path, media_type="video/mp4", filename="output.mp4")
+    files = [input_path, output_path]
+    return FileResponse(
+        output_path,
+        media_type="video/mp4",
+        filename="output.mp4",
+        background=BackgroundTask(lambda: cleanup(files)),
+    )
 
 
 @app.post("/trim")
 async def trim_video(
-    file: UploadFile,
+    file: UploadFile = File(..., max_size=MAX_SIZE),
     start: str = Form(...),  # e.g. "00:00:10"
     end: str = Form(...),  # e.g. "00:00:20"
 ):
+    try:
+        validate_file(file.filename, "video")
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
     input_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_{file.filename}")
     with open(input_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
     output_path = input_path.replace(".mp4", "_trimmed.mp4")
-    cmd = f"ffmpeg -y -i {input_path} -ss {start} -to {end} -c copy {output_path}"
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        input_path,
+        "-ss",
+        str(start),
+        "-to",
+        str(end),
+        "-c",
+        "copy",
+        output_path,
+    ]
 
-    error = run_ffmpeg(cmd.split())
+    error = await run_ffmpeg(cmd)
+
     if error:
-        return error
+        return JSONResponse({"error": "Processing failed"}, status_code=500)
 
-    return FileResponse(output_path, media_type="video/mp4", filename="output.mp4")
+    files = [input_path, output_path]
+    return FileResponse(
+        output_path,
+        media_type="video/mp4",
+        filename="output.mp4",
+        background=BackgroundTask(lambda: cleanup(files)),
+    )
 
 
 @app.post("/replace-audio")
-async def replace_audio(video: UploadFile, audio: UploadFile):
-    video_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_{video.filename}")
-    audio_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_{audio.filename}")
+async def replace_audio(
+    video: UploadFile = File(..., max_size=MAX_SIZE),
+    audio: UploadFile = File(..., max_size=MAX_SIZE),
+):
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    try:
+        validate_file(video.filename, "video")
+        validate_file(audio.filename, "audio")
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
 
+    # Save video & audio
+    video_ext = os.path.splitext(video.filename)[1] or ".mp4"
+    video_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}{video_ext}")
     with open(video_path, "wb") as f:
         shutil.copyfileobj(video.file, f)
+
+    audio_ext = os.path.splitext(audio.filename)[1] or ".mp3"
+    audio_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}{audio_ext}")
     with open(audio_path, "wb") as f:
         shutil.copyfileobj(audio.file, f)
 
-    output_path = video_path.replace(".mp4", "_newaudio.mp4")
-    cmd = f"ffmpeg -y -i {video_path} -i {audio_path} -map 0:v -map 1:a -c:v copy -shortest {output_path}"
+    output_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_replaced.mp4")
 
-    error = run_ffmpeg(cmd.split())
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        video_path,
+        "-i",
+        audio_path,
+        "-map",
+        "0:v",
+        "-map",
+        "1:a",
+        "-c:v",
+        "copy",
+        "-shortest",
+        output_path,
+    ]
+
+    error = await run_ffmpeg(cmd)
     if error:
-        return error
+        return JSONResponse({"error": "Processing failed"}, status_code=500)
 
-    return FileResponse(output_path, media_type="video/mp4", filename="output.mp4")
+    files = [video_path, audio_path, output_path]
+    return FileResponse(
+        output_path,
+        media_type="video/mp4",
+        filename="output.mp4",
+        background=BackgroundTask(lambda: cleanup(files)),
+    )
 
 
 @app.post("/image-audio")
-async def image_audio(image: UploadFile, audio: UploadFile):
+async def image_audio(
+    image: UploadFile = File(..., max_size=MAX_SIZE),
+    audio: UploadFile = File(..., max_size=MAX_SIZE),
+):
+    try:
+        validate_file(image.filename, "image")
+        validate_file(audio.filename, "audio")
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
     image_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_{image.filename}")
     audio_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_{audio.filename}")
 
     with open(image_path, "wb") as f:
         shutil.copyfileobj(image.file, f)
+
     with open(audio_path, "wb") as f:
         shutil.copyfileobj(audio.file, f)
 
     output_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_slideshow.mp4")
-    cmd = f"ffmpeg -y -loop 1 -i {image_path} -i {audio_path} -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest {output_path}"
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-loop",
+        "1",
+        "-i",
+        image_path,
+        "-i",
+        audio_path,
+        "-c:v",
+        "libx264",
+        "-tune",
+        "stillimage",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "192k",
+        "-shortest",
+        output_path,
+    ]
 
-    error = run_ffmpeg(cmd.split())
+    error = await run_ffmpeg(cmd)
     if error:
-        return error
+        return JSONResponse({"error": "Processing failed"}, status_code=500)
 
-    return FileResponse(output_path, media_type="video/mp4", filename="output.mp4")
+    files = [image_path, audio_path, output_path]
+    return FileResponse(
+        output_path,
+        media_type="video/mp4",
+        filename="output.mp4",
+        background=BackgroundTask(lambda: cleanup(files)),
+    )

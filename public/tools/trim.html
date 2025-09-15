@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Trim Video</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+    <nav>
+        <a href="/">FFStudio 🎛️</a>
+    </nav>
+
+    <main>
+        <div class="card">
+            <h2>Trim Video ⏱</h2>
+            <br>
+            <form class="form" id="trimForm" enctype="multipart/form-data">
+                <div class="form-row file-input">
+                    <label for="file">Video File:</label>
+                    <input type="file" id="file" name="file" accept="video/*" required>
+                </div>
+                <div class="form-row">
+                    <label for="start">Start Time:</label>
+                    <input type="text" id="start" name="start" value="00:00:10" placeholder="HH:MM:SS">
+                </div>
+                <div class="form-row">
+                    <label for="end">End Time:</label>
+                    <input type="text" id="end" name="end" value="00:00:20" placeholder="HH:MM:SS">
+                </div>
+                <button type="submit">Trim</button>
+            </form>
+
+            <h3>Preview:</h3>
+            <video id="videoPreview" controls></video>
+            <a id="downloadBtn" href="#" download="output.mp4" style="display:none;">
+                <button type="button">Download</button>
+            </a>
+        </div>
+    </main>
+    <script src="/static/js/script.js"></script>
+    <script>
+        handleForm("trimForm", "trim", "videoPreview");
+    </script>
+</body>
+
+</html>

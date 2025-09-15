@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Replace Audio</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+    <nav>
+        <a href="/">FFStudio 🎛️</a>
+    </nav>
+
+    <main>
+        <div class="card">
+            <h2>Replace Audio 🎵</h2>
+            <br>
+            <form class="form" id="replaceForm" enctype="multipart/form-data">
+                <div class="form-row file-input">
+                    <label for="video">Video:</label>
+                    <input type="file" id="video" name="video" accept="video/*" required>
+                </div>
+                <div class="form-row file-input">
+                    <label for="audio">New Audio:</label>
+                    <input type="file" id="audio" name="audio" accept="audio/*" required>
+                </div>
+                <button type="submit">Replace</button>
+            </form>
+
+
+            <h3>Preview:</h3>
+            <video id="videoPreview" controls></video>
+            <a id="downloadBtn" href="#" download="output.mp4" style="display:none;">
+                <button type="button">Download</button>
+            </a>
+        </div>
+    </main>
+    <script src="/static/js/script.js"></script>
+    <script>
+        handleForm("replaceForm", "replace-audio", "videoPreview");
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <head>
+        <meta charset="UTF-8">
+        <title>FFStudio Editor</title>
+        <link rel="stylesheet" href="/static/css/style.css">
+        <link rel="stylesheet" href="/static/css/editor.css">
+    </head>
+</head>
+
+<body>
+    <nav>
+        <a href="/">FFStudio 🎛️</a>
+    </nav>
+
+    <div class="editor-container">
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <button id="cropBtn">Crop</button>
+            <button id="rotateBtn">Rotate</button>
+            <button id="resizeBtn">Resize</button>
+            <button id="flipBtn">Flip</button>
+        </div>
+
+        <!-- Workspace -->
+        <div class="workspace">
+            <canvas id="editorCanvas" width="800" height="600"></canvas>
+
+            <div class="topbar">
+                <div></div>
+                <div class="undo-redo">
+                    <button id="undoBtn">Undo</button>
+                    <button id="redoBtn">Redo</button>
+                </div>
+                <button id="downloadBtn">Download</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/static/js/editor.js"></script>
+</body>
+
+</html>

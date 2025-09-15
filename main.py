@@ -112,17 +112,19 @@ async def crop_video(
         validate_file(file.filename, "video")
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
-    input_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_{file.filename}")
-    with open(input_path, "wb") as f:
+
+    video_ext = os.path.splitext(file.filename)[1] or ".mp4"
+    video_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}{video_ext}")
+    with open(video_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
-    output_path = input_path.replace(".mp4", "_cropped.mp4")
+    output_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_cropped.mp4")
 
     cmd = [
         "ffmpeg",
         "-y",
         "-i",
-        input_path,
+        video_path,
         "-filter:v",
         f"crop={w}:{h}:{x}:{y}",
         "-c:a",
@@ -133,7 +135,7 @@ async def crop_video(
     if error:
         return JSONResponse({"error": "Processing failed"}, status_code=500)
 
-    files = [input_path, output_path]
+    files = [video_path, output_path]
     return FileResponse(
         output_path,
         media_type="video/mp4",

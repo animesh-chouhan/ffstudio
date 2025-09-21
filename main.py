@@ -264,6 +264,21 @@ async def image_audio(
     with open(audio_path, "wb") as f:
         shutil.copyfileobj(audio.file, f)
 
+    scaled_image_path = os.path.join(
+        UPLOAD_DIR, f"{uuid.uuid4()}_scaled_{image.filename}"
+    )
+    image_resize_cmd = [
+        "ffmpeg",
+        "-i",
+        image_path,
+        "-vf",
+        "scale=1080:-2",
+        scaled_image_path,
+    ]
+    error = await run_ffmpeg(image_resize_cmd)
+    if error:
+        return JSONResponse({"error": "Processing failed"}, status_code=500)
+
     output_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_slideshow.mp4")
     cmd = [
         "ffmpeg",
@@ -271,7 +286,7 @@ async def image_audio(
         "-loop",
         "1",
         "-i",
-        image_path,
+        scaled_image_path,
         "-i",
         audio_path,
         "-c:v",
@@ -282,6 +297,8 @@ async def image_audio(
         "aac",
         "-b:a",
         "192k",
+        "-preset",
+        "ultrafast",
         "-shortest",
         output_path,
     ]
@@ -290,7 +307,7 @@ async def image_audio(
     if error:
         return JSONResponse({"error": "Processing failed"}, status_code=500)
 
-    files = [image_path, audio_path, output_path]
+    files = [image_path, scaled_image_path, audio_path, output_path]
     return FileResponse(
         output_path,
         media_type="video/mp4",
